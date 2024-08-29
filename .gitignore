@@ -1,0 +1,43 @@
+# Базовые Go файлы
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Директории, создаваемые при сборке
+/build/
+bin/
+vendor/
+
+# Скаченные зависимости
+go.sum
+go.work
+
+# Пакетная зависимость (Godeps)
+Godeps/
+
+# Конфигурационные файлы IDE
+.idea/
+.vscode/
+*.swp
+
+# Кеширование и временные файлы
+*.log
+*.tmp
+*.cache
+*.bak
+*.backup
+.DS_Store
+
+# Результаты тестов
+*.coverprofile
+*.cover.out
+
+# Кеш сборки Go
+/tmp/
+/*.o
+/*.a
+.env
