@@ -4,6 +4,7 @@ import (
 	"awesomeProject/app/models"
 	"awesomeProject/app/repository"
 	"awesomeProject/app/utils"
+	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -25,7 +26,6 @@ func (u AuthServiceImpl) Login(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
 	email := request.Email
 	data, err := u.authRepository.FindUserByEmail(email)
 	if err != nil {
@@ -34,29 +34,27 @@ func (u AuthServiceImpl) Login(c *gin.Context) {
 	}
 
 	if !utils.CheckPasswordHash(request.Password, data.Password) {
+		fmt.Println("Password check failed")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
+	} else {
+		fmt.Println("Password check succeeded")
 	}
-
 	expirationTime := time.Now().Add(24 * time.Hour)
 	claims := &models.Claims{
-		Name: data.Name,
+		Id: data.ID,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expirationTime.Unix(),
 		},
 	}
-	var (
-		JWTKey = []byte("example_secret_key_12345")
-	)
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString(JWTKey)
+	tokenString, err := utils.GenerateToken(expirationTime, *claims)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return
 	}
 
-	err = utils.AddToRedis(tokenString)
+	err = utils.AddToRedis(data.Email, tokenString)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save token"})
 		return

@@ -5,9 +5,9 @@ import (
 	"awesomeProject/app/domain/dao"
 	"awesomeProject/app/pkg"
 	"awesomeProject/app/repository"
+	"awesomeProject/app/utils"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"strconv"
 )
@@ -43,7 +43,7 @@ func (u UserServiceImpl) UpdateUserData(c *gin.Context) {
 	}
 
 	data.Email = request.Email
-	data.Name = request.Password
+	data.Name = request.Name
 	data.Status = request.Status
 	u.userRepository.Save(&data)
 
@@ -66,8 +66,12 @@ func (u UserServiceImpl) GetUserById(c *gin.Context) {
 		log.Error("Happened error when get data from database. Error", err)
 		pkg.PanicException(constant.DataNotFound)
 	}
-
-	c.JSON(http.StatusOK, pkg.BuildResponse(constant.Success, data))
+	result := dao.UserResponse{
+		ID:    data.ID,
+		Name:  data.Name,
+		Email: data.Email,
+	}
+	c.JSON(http.StatusOK, pkg.BuildResponse(constant.Success, result))
 }
 
 func (u UserServiceImpl) AddUserData(c *gin.Context) {
@@ -85,10 +89,19 @@ func (u UserServiceImpl) AddUserData(c *gin.Context) {
 		pkg.PanicException(constant.InvalidRequest)
 	}
 
-	hash, _ := bcrypt.GenerateFromPassword([]byte(request.Password), 15)
-	request.Password = string(hash)
+	hashedPassword, err := utils.HashPassword(request.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		return
+	}
 
-	data, err := u.userRepository.Save(&request)
+	user := dao.User{
+		Name:     request.Name,
+		Email:    request.Email,
+		Password: hashedPassword,
+		Status:   request.Status,
+	}
+	data, err := u.userRepository.Save(&user)
 	if err != nil {
 		log.Error("Happened error when saving data to database. Error", err)
 		pkg.PanicException(constant.UnknownError)

@@ -1,6 +1,7 @@
 package router
 
 import (
+	"awesomeProject/app/middlware"
 	"awesomeProject/config"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -19,6 +20,7 @@ func Init(init *config.Initialization) *gin.Engine {
 	api.GET("/users", init.UserCtrl.GetAllUserData)
 	{
 		user := api.Group("/user")
+		user.Use(middlware.AuthMiddleware())
 		user.POST("", init.UserCtrl.AddUserData)
 		user.GET("/:userID", init.UserCtrl.GetUserById)
 		user.PUT("/:userID", init.UserCtrl.UpdateUserData)

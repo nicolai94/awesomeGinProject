@@ -13,6 +13,6 @@ type TokenResponse struct {
 }
 
 type Claims struct {
-	Name string `json:"name"`
+	Id int `json:"Id"`
 	jwt.StandardClaims
 }

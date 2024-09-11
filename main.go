@@ -2,6 +2,7 @@ package main
 
 import (
 	"awesomeProject/app/router"
+	"awesomeProject/app/utils"
 	"awesomeProject/config"
 	"github.com/joho/godotenv"
 	"os"
@@ -16,9 +17,7 @@ func main() {
 	port := os.Getenv("PORT")
 
 	config.ConnectToDB()
-	config.ConnectRedis()
-	//config.ConnectToDB().AutoMigrate()
-
+	utils.Init()
 	init := config.InitDependencies()
 
 	app := router.Init(init)
