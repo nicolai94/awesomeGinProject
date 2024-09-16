@@ -13,6 +13,7 @@ import (
 )
 
 type UserService interface {
+	GetMe(c *gin.Context)
 	GetAllUser(c *gin.Context)
 	GetUserById(c *gin.Context)
 	AddUserData(c *gin.Context)
@@ -22,6 +23,32 @@ type UserService interface {
 
 type UserServiceImpl struct {
 	userRepository repository.UserRepository
+}
+
+func (u UserServiceImpl) GetMe(c *gin.Context) {
+	userIdAny := c.MustGet("Id")
+
+	var intUserId int
+	switch v := userIdAny.(type) {
+	case float64:
+		intUserId = int(v)
+	case int:
+		intUserId = v
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Unsupported userId type"})
+		return
+	}
+
+	user, err := u.userRepository.FindUserById(intUserId)
+	if err != nil {
+		log.Println("Happened error when get data from database. Error:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"user": user,
+	})
 }
 
 func (u UserServiceImpl) UpdateUserData(c *gin.Context) {

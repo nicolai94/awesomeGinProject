@@ -24,6 +24,7 @@ func Init(init *config.Initialization) *gin.Engine {
 		user.GET("/:userID", middlware.AuthMiddleware(), init.UserCtrl.GetUserById)
 		user.PUT("/:userID", init.UserCtrl.UpdateUserData)
 		user.DELETE("/:userID", init.UserCtrl.DeleteUser)
+		user.GET("/me", middlware.AuthMiddleware(), init.UserCtrl.GetMe)
 	}
 
 	{

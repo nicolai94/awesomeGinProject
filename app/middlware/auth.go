@@ -3,13 +3,12 @@ package middlware
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 )
-
-const secretKey = "example_secret_key_12345"
 
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -26,7 +25,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, jwt.ErrInvalidKey
 			}
-			return []byte(secretKey), nil
+			return []byte(os.Getenv("JWT_SECRET_KEY")), nil
 		})
 
 		if err != nil || !token.Valid {

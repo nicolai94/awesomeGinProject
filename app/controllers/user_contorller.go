@@ -6,6 +6,7 @@ import (
 )
 
 type UserController interface {
+	GetMe(c *gin.Context)
 	GetAllUserData(c *gin.Context)
 	AddUserData(c *gin.Context)
 	GetUserById(c *gin.Context)
@@ -15,6 +16,10 @@ type UserController interface {
 
 type UserControllerImpl struct {
 	svc service.UserService
+}
+
+func (u UserControllerImpl) GetMe(c *gin.Context) {
+	u.svc.GetMe(c)
 }
 
 func (u UserControllerImpl) GetAllUserData(c *gin.Context) {

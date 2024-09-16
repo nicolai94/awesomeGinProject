@@ -1,7 +1,9 @@
 package service
 
 import (
+	"awesomeProject/app/constant"
 	"awesomeProject/app/models"
+	"awesomeProject/app/pkg"
 	"awesomeProject/app/repository"
 	"awesomeProject/app/utils"
 	"fmt"
@@ -24,11 +26,12 @@ type AuthServiceImpl struct {
 }
 
 func (u AuthServiceImpl) Login(c *gin.Context) {
+	defer pkg.PanicHandler(c)
 	var request models.LoginRequest
 
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+		pkg.PanicException(constant.InvalidRequest)
 	}
 
 	email := request.Email
