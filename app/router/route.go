@@ -20,9 +20,8 @@ func Init(init *config.Initialization) *gin.Engine {
 	api.GET("/users", init.UserCtrl.GetAllUserData)
 	{
 		user := api.Group("/user")
-		user.Use(middlware.AuthMiddleware())
 		user.POST("", init.UserCtrl.AddUserData)
-		user.GET("/:userID", init.UserCtrl.GetUserById)
+		user.GET("/:userID", middlware.AuthMiddleware(), init.UserCtrl.GetUserById)
 		user.PUT("/:userID", init.UserCtrl.UpdateUserData)
 		user.DELETE("/:userID", init.UserCtrl.DeleteUser)
 	}
@@ -30,6 +29,7 @@ func Init(init *config.Initialization) *gin.Engine {
 	{
 		auth := api.Group("/auth")
 		auth.POST("/login", init.AuthCtrl.Login)
+		auth.POST("/refresh", init.AuthCtrl.RefreshToken)
 	}
 	return router
 }

@@ -8,11 +8,13 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strconv"
 	"time"
 )
 
 type AuthService interface {
 	Login(c *gin.Context)
+	RefreshToken(c *gin.Context)
 }
 
 type AuthServiceImpl struct {
@@ -26,6 +28,7 @@ func (u AuthServiceImpl) Login(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
 	email := request.Email
 	data, err := u.authRepository.FindUserByEmail(email)
 	if err != nil {
@@ -40,27 +43,104 @@ func (u AuthServiceImpl) Login(c *gin.Context) {
 	} else {
 		fmt.Println("Password check succeeded")
 	}
-	expirationTime := time.Now().Add(24 * time.Hour)
-	claims := &models.Claims{
+
+	accessTokenExpirationTime := time.Now().Add(24 * time.Hour)
+	accessClaims := &models.Claims{
 		Id: data.ID,
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: expirationTime.Unix(),
+			ExpiresAt: accessTokenExpirationTime.Unix(),
 		},
 	}
 
-	tokenString, err := utils.GenerateToken(expirationTime, *claims)
+	accessToken, err := utils.GenerateToken(accessTokenExpirationTime, *accessClaims)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate access token"})
 		return
 	}
 
-	err = utils.AddToRedis(data.Email, tokenString)
+	refreshTokenExpirationTime := time.Now().Add(7 * 24 * time.Hour)
+	refreshClaims := &models.Claims{
+		Id: data.ID,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: refreshTokenExpirationTime.Unix(),
+		},
+	}
+
+	refreshToken, err := utils.GenerateToken(refreshTokenExpirationTime, *refreshClaims)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save token"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate refresh token"})
 		return
 	}
 
-	c.JSON(http.StatusOK, models.TokenResponse{AccessToken: tokenString, RefreshToken: "dasdasdad"})
+	err = utils.AddToRedis(strconv.Itoa(data.ID)+"_access", accessToken)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save access token"})
+		return
+	}
+
+	err = utils.AddToRedis(strconv.Itoa(data.ID)+"_refresh", refreshToken)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save refresh token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.TokenResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	})
+}
+
+func (u AuthServiceImpl) RefreshToken(c *gin.Context) {
+	var request models.TokenRefreshRequest
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	refreshToken := request.RefreshToken
+
+	claims := &models.Claims{}
+	tkn, err := jwt.ParseWithClaims(refreshToken, claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte("example_secret_key_12345"), nil
+	})
+
+	if err != nil || !tkn.Valid {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid refresh token"})
+		return
+	}
+
+	redisRefreshToken, err := utils.GetFromRedis(strconv.Itoa(claims.Id) + "_refresh")
+	fmt.Println("redis refresh token: ", redisRefreshToken)
+	if err != nil || redisRefreshToken != refreshToken {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Refresh token not found or invalid"})
+		return
+	}
+
+	accessTokenExpirationTime := time.Now().Add(24 * time.Hour)
+	accessClaims := &models.Claims{
+		Id: claims.Id,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: accessTokenExpirationTime.Unix(),
+		},
+	}
+
+	newAccessToken, err := utils.GenerateToken(accessTokenExpirationTime, *accessClaims)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate new access token"})
+		return
+	}
+
+	err = utils.AddToRedis(strconv.Itoa(claims.Id)+"_access", newAccessToken)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save new access token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.TokenResponse{
+		AccessToken:  newAccessToken,
+		RefreshToken: refreshToken,
+	})
 }
 
 func AuthServiceInit(authRepository repository.AuthRepository) *AuthServiceImpl {

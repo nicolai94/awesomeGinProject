@@ -36,7 +36,7 @@ func ConnectRedis() *redis.Client {
 
 var RedisClient *redis.Client
 
-func Init() {
+func ConnectToRedis() {
 	RedisClient = ConnectRedis() // Инициализация клиента Redis
 }
 

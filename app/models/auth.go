@@ -16,3 +16,7 @@ type Claims struct {
 	Id int `json:"Id"`
 	jwt.StandardClaims
 }
+
+type TokenRefreshRequest struct {
+	RefreshToken string `json:"refresh_token" binding:"required"`
+}
