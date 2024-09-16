@@ -8,6 +8,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 )
@@ -15,6 +16,7 @@ import (
 type AuthService interface {
 	Login(c *gin.Context)
 	RefreshToken(c *gin.Context)
+	Logout(c *gin.Context)
 }
 
 type AuthServiceImpl struct {
@@ -102,7 +104,7 @@ func (u AuthServiceImpl) RefreshToken(c *gin.Context) {
 
 	claims := &models.Claims{}
 	tkn, err := jwt.ParseWithClaims(refreshToken, claims, func(token *jwt.Token) (interface{}, error) {
-		return []byte("example_secret_key_12345"), nil
+		return []byte(os.Getenv("JWT_SECRET_KEY")), nil
 	})
 
 	if err != nil || !tkn.Valid {
@@ -111,7 +113,7 @@ func (u AuthServiceImpl) RefreshToken(c *gin.Context) {
 	}
 
 	redisRefreshToken, err := utils.GetFromRedis(strconv.Itoa(claims.Id) + "_refresh")
-	fmt.Println("redis refresh token: ", redisRefreshToken)
+
 	if err != nil || redisRefreshToken != refreshToken {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Refresh token not found or invalid"})
 		return
@@ -141,6 +143,25 @@ func (u AuthServiceImpl) RefreshToken(c *gin.Context) {
 		AccessToken:  newAccessToken,
 		RefreshToken: refreshToken,
 	})
+}
+
+func (u AuthServiceImpl) Logout(c *gin.Context) {
+	var request models.LogoutRequest
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	refreshToken := request.RefreshToken
+
+	err := utils.RemoveFromRedis(refreshToken)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove token from Redis"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
 }
 
 func AuthServiceInit(authRepository repository.AuthRepository) *AuthServiceImpl {

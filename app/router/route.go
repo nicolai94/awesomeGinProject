@@ -30,6 +30,7 @@ func Init(init *config.Initialization) *gin.Engine {
 		auth := api.Group("/auth")
 		auth.POST("/login", init.AuthCtrl.Login)
 		auth.POST("/refresh", init.AuthCtrl.RefreshToken)
+		auth.POST("/logout", init.AuthCtrl.Logout)
 	}
 	return router
 }

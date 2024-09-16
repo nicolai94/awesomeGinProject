@@ -18,11 +18,10 @@ func ConnectRedis() *redis.Client {
 	}
 
 	client := redis.NewClient(&redis.Options{
-		Addr: redisAddr, // Адрес Redis-сервера
-		DB:   redisDB,   // Номер базы данных Redis
+		Addr: redisAddr,
+		DB:   redisDB,
 	})
 
-	// Проверка соединения
 	ctx := context.Background()
 	_, err = client.Ping(ctx).Result()
 	if err != nil {
@@ -37,7 +36,7 @@ func ConnectRedis() *redis.Client {
 var RedisClient *redis.Client
 
 func ConnectToRedis() {
-	RedisClient = ConnectRedis() // Инициализация клиента Redis
+	RedisClient = ConnectRedis()
 }
 
 func AddToRedis(key string, value string) error {

@@ -4,6 +4,7 @@ import (
 	"awesomeProject/app/models"
 	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/crypto/bcrypt"
+	"os"
 	"time"
 )
 
@@ -22,7 +23,7 @@ func CheckPasswordHash(password, hash string) bool {
 
 func GenerateToken(expTime time.Time, claims models.Claims) (string, error) {
 	var (
-		JWTKey = []byte("example_secret_key_12345")
+		JWTKey = []byte(os.Getenv("JWT_SECRET_KEY"))
 	)
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
