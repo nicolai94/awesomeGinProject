@@ -44,8 +44,6 @@ func (u AuthServiceImpl) Login(c *gin.Context) {
 		fmt.Println("Password check failed")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
-	} else {
-		fmt.Println("Password check succeeded")
 	}
 
 	accessTokenExpirationTime := time.Now().Add(24 * time.Hour)
@@ -76,13 +74,13 @@ func (u AuthServiceImpl) Login(c *gin.Context) {
 		return
 	}
 
-	err = utils.AddToRedis(data.ID.String()+"_access", accessToken)
+	_, err = utils.AddToRedis(data.ID+"_access", accessToken)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save access token"})
 		return
 	}
 
-	err = utils.AddToRedis(data.ID.String()+"_refresh", refreshToken)
+	_, err = utils.AddToRedis(data.ID+"_refresh", refreshToken)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save refresh token"})
 		return
@@ -114,7 +112,7 @@ func (u AuthServiceImpl) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	redisRefreshToken, err := utils.GetFromRedis(claims.Id.String() + "_refresh")
+	redisRefreshToken, err := utils.GetFromRedis(claims.Id + "_refresh")
 
 	if err != nil || redisRefreshToken != refreshToken {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Refresh token not found or invalid"})
@@ -135,7 +133,7 @@ func (u AuthServiceImpl) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	err = utils.AddToRedis(claims.Id.String()+"_access", newAccessToken)
+	_, err = utils.AddToRedis(claims.Id+"_access", newAccessToken)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save new access token"})
 		return

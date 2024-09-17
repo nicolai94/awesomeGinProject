@@ -2,7 +2,6 @@ package models
 
 import (
 	"github.com/dgrijalva/jwt-go"
-	"github.com/google/uuid"
 )
 
 type LoginRequest struct {
@@ -16,7 +15,7 @@ type TokenResponse struct {
 }
 
 type Claims struct {
-	Id uuid.UUID `json:"Id"`
+	Id string `json:"Id"`
 	jwt.StandardClaims
 }
 

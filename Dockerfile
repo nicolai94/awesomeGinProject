@@ -1,24 +1,32 @@
+# Используем базовый образ для сборки
 FROM golang:1.23-alpine AS builder
+
+# Устанавливаем рабочую директорию
+WORKDIR /app
+
+# Устанавливаем Air
+RUN go install github.com/air-verse/air@latest
+
+# Копируем go.mod и go.sum и устанавливаем зависимости
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Копируем исходный код
+COPY . .
+
+# Собираем приложение
+RUN go build -o awesome_gin_app .
+
+# Создаем конечный образ
+FROM golang:1.23-alpine
+
+# Устанавливаем Air в конечный образ
+RUN go install github.com/air-verse/air@latest
+
+# Копируем бинарный файл из предыдущего образа
+COPY --from=builder /app/awesome_gin_app /app/awesome_gin_app
 
 WORKDIR /app
 
-COPY go.mod go.sum ./
-
-RUN go mod download
-
-COPY . .
-# Установите wire
-RUN go install github.com/google/wire/cmd/wire@latest
-
-# Сгенерируйте код с помощью wire
-RUN wire ./config
-
-RUN go build -o awesome_gin_app .
-
-FROM alpine:latest
-
-COPY --from=builder /app/awesome_gin_app /usr/local/bin/awesome_gin_app
-
-EXPOSE 8080
-
-CMD ["awesome_gin_app"]
+# Определяем команду запуска Air
+CMD ["air"]

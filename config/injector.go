@@ -37,7 +37,19 @@ var authCtrlSet = wire.NewSet(controller.AuthControllerInit,
 	wire.Bind(new(controller.AuthController), new(*controller.AuthControllerImpl)),
 )
 
+var orderServiceSet = wire.NewSet(service.OrderServiceInit,
+	wire.Bind(new(service.OrderService), new(*service.OrderServiceImpl)),
+)
+
+var orderRepoSet = wire.NewSet(repository.OrderRepositoryInit,
+	wire.Bind(new(repository.OrderRepository), new(*repository.OrderRepositoryImpl)),
+)
+
+var orderCtrlSet = wire.NewSet(controller.OrderControllerInit,
+	wire.Bind(new(controller.OrderController), new(*controller.OrderControllerImpl)),
+)
+
 func InitDependencies() *Initialization {
-	wire.Build(NewInitialization, db, userCtrlSet, userServiceSet, userRepoSet, authServiceSet, authRepoSet, authCtrlSet)
+	wire.Build(NewInitialization, db, userCtrlSet, userServiceSet, userRepoSet, authServiceSet, authRepoSet, authCtrlSet, orderServiceSet, orderRepoSet, orderCtrlSet)
 	return nil
 }

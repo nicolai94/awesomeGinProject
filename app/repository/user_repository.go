@@ -2,16 +2,15 @@ package repository
 
 import (
 	"awesomeProject/app/domain/dao"
-	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
 type UserRepository interface {
 	FindAllUser(limit, offset int) ([]dao.User, error)
-	FindUserById(id uuid.UUID) (dao.User, error)
+	FindUserById(id string) (dao.User, error)
 	Save(user *dao.User) (dao.User, error)
-	DeleteUserById(id uuid.UUID) error
+	DeleteUserById(id string) error
 }
 
 type UserRepositoryImpl struct {
@@ -30,7 +29,7 @@ func (u UserRepositoryImpl) FindAllUser(limit, offset int) ([]dao.User, error) {
 	return users, nil
 }
 
-func (u UserRepositoryImpl) FindUserById(id uuid.UUID) (dao.User, error) {
+func (u UserRepositoryImpl) FindUserById(id string) (dao.User, error) {
 	user := dao.User{
 		ID: id,
 	}
@@ -51,7 +50,7 @@ func (u UserRepositoryImpl) Save(user *dao.User) (dao.User, error) {
 	return *user, nil
 }
 
-func (u UserRepositoryImpl) DeleteUserById(id uuid.UUID) error {
+func (u UserRepositoryImpl) DeleteUserById(id string) error {
 	err := u.db.Delete(&dao.User{}, id).Error
 	if err != nil {
 		log.Error("Got an error when delete user. Error: ", err)

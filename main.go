@@ -20,7 +20,10 @@ func main() {
 	utils.ConnectToRedis()
 
 	init := config.InitDependencies()
-
+	//go func() {
+	//	handlers.ProcessOrders(config.ConnectToDB())
+	//}()
+	fmt.Print("Listening on port: ", port)
 	app := router.Init(init)
 	app.Run(":" + port)
 }

@@ -33,5 +33,9 @@ func Init(init *config.Initialization) *gin.Engine {
 		auth.POST("/refresh", init.AuthCtrl.RefreshToken)
 		auth.POST("/logout", init.AuthCtrl.Logout)
 	}
+	{
+		order := api.Group("/order")
+		order.POST("", init.OrderCtrl.CreateOrder)
+	}
 	return router
 }

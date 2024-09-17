@@ -39,10 +39,10 @@ func ConnectToRedis() {
 	RedisClient = ConnectRedis()
 }
 
-func AddToRedis(key string, value string) error {
+func AddToRedis(key string, value any) (context.Context, error) {
 	ctx := context.Background()
 	err := RedisClient.Set(ctx, key, value, 24*time.Hour).Err()
-	return err
+	return ctx, err
 }
 
 func GetFromRedis(key string) (string, error) {

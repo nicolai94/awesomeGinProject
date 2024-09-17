@@ -19,11 +19,14 @@ func InitDependencies() *Initialization {
 	gormDB := ConnectToDB()
 	userRepositoryImpl := repository.UserRepositoryInit(gormDB)
 	authRepositoryImpl := repository.AuthRepositoryInit(gormDB)
+	orderRepositoryImpl := repository.OrderRepositoryInit(gormDB)
 	userServiceImpl := service.UserServiceInit(userRepositoryImpl)
 	authServiceImpl := service.AuthServiceInit(authRepositoryImpl)
+	orderServiceImpl := service.OrderServiceInit(orderRepositoryImpl)
 	userControllerImpl := controllers.UserControllerInit(userServiceImpl)
 	authControllerImpl := controllers.AuthControllerInit(authServiceImpl)
-	initialization := NewInitialization(userRepositoryImpl, authRepositoryImpl, userServiceImpl, authServiceImpl, userControllerImpl, authControllerImpl)
+	orderControllerImpl := controllers.OrderControllerInit(orderServiceImpl)
+	initialization := NewInitialization(userRepositoryImpl, authRepositoryImpl, orderRepositoryImpl, userServiceImpl, authServiceImpl, orderServiceImpl, userControllerImpl, authControllerImpl, orderControllerImpl)
 	return initialization
 }
 

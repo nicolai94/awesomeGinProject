@@ -7,7 +7,6 @@ import (
 	"awesomeProject/app/repository"
 	"awesomeProject/app/utils"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
@@ -27,14 +26,8 @@ type UserServiceImpl struct {
 }
 
 func (u UserServiceImpl) GetMe(c *gin.Context) {
-	userIdAny := c.MustGet("Id").(string)
+	userId := c.MustGet("Id").(string)
 
-	userId, err := uuid.Parse(userIdAny)
-	if err != nil {
-		log.Println("Failed to parse user ID:", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
-		return
-	}
 	user, err := u.userRepository.FindUserById(userId)
 	if err != nil {
 		log.Println("Happened error when get data from database. Error:", err)
@@ -42,8 +35,14 @@ func (u UserServiceImpl) GetMe(c *gin.Context) {
 		return
 	}
 
+	responseUser := dao.UserResponse{
+		ID:    user.ID,
+		Name:  user.Name,
+		Email: user.Email,
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"user": user,
+		"user": responseUser,
 	})
 }
 
@@ -59,13 +58,7 @@ func (u UserServiceImpl) UpdateUserData(c *gin.Context) {
 		pkg.PanicException(constant.InvalidRequest)
 	}
 
-	parsedId, err := uuid.Parse(userID)
-	if err != nil {
-		log.Error("Happened error when parse user id. Error", err)
-		pkg.PanicException(constant.InvalidRequest)
-	}
-
-	data, err := u.userRepository.FindUserById(parsedId)
+	data, err := u.userRepository.FindUserById(userID)
 	if err != nil {
 		log.Error("Happened error when get data from database. Error", err)
 		pkg.PanicException(constant.DataNotFound)
@@ -89,12 +82,8 @@ func (u UserServiceImpl) GetUserById(c *gin.Context) {
 
 	log.Info("start to execute program get user by id")
 	userID := c.Param("userID")
-	parsedId, err := uuid.Parse(userID)
-	if err != nil {
-		log.Error("Happened error when parse user id. Error", err)
-		pkg.PanicException(constant.InvalidRequest)
-	}
-	data, err := u.userRepository.FindUserById(parsedId)
+
+	data, err := u.userRepository.FindUserById(userID)
 	if err != nil {
 		log.Error("Happened error when get data from database. Error", err)
 		pkg.PanicException(constant.DataNotFound)
@@ -163,14 +152,10 @@ func (u UserServiceImpl) DeleteUser(c *gin.Context) {
 
 	log.Info("start to execute delete data user by id")
 	userID := c.Param("userID")
-	parsedId, err := uuid.Parse(userID)
-	if err != nil {
-		log.Error("Happened error when parse user id. Error", err)
-		pkg.PanicException(constant.InvalidRequest)
-	}
-	errRepo := u.userRepository.DeleteUserById(parsedId)
+
+	errRepo := u.userRepository.DeleteUserById(userID)
 	if errRepo != nil {
-		log.Error("Happened Error when try delete data user from DB. Error:", err)
+		log.Error("Happened Error when try delete data user from DB. Error:", errRepo)
 		pkg.PanicException(constant.UnknownError)
 	}
 

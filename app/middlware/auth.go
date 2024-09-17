@@ -42,7 +42,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		userId, ok := claims["Id"].(float64)
+		userId, ok := claims["Id"]
 		if !ok {
 			c.JSON(http.StatusUnauthorized, gin.H{"message": "Invalid token: ID not found"})
 			c.Abort()
