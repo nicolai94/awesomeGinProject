@@ -11,7 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"os"
-	"strconv"
 	"time"
 )
 
@@ -77,13 +76,13 @@ func (u AuthServiceImpl) Login(c *gin.Context) {
 		return
 	}
 
-	err = utils.AddToRedis(strconv.Itoa(data.ID)+"_access", accessToken)
+	err = utils.AddToRedis(data.ID.String()+"_access", accessToken)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save access token"})
 		return
 	}
 
-	err = utils.AddToRedis(strconv.Itoa(data.ID)+"_refresh", refreshToken)
+	err = utils.AddToRedis(data.ID.String()+"_refresh", refreshToken)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save refresh token"})
 		return
@@ -115,7 +114,7 @@ func (u AuthServiceImpl) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	redisRefreshToken, err := utils.GetFromRedis(strconv.Itoa(claims.Id) + "_refresh")
+	redisRefreshToken, err := utils.GetFromRedis(claims.Id.String() + "_refresh")
 
 	if err != nil || redisRefreshToken != refreshToken {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Refresh token not found or invalid"})
@@ -136,7 +135,7 @@ func (u AuthServiceImpl) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	err = utils.AddToRedis(strconv.Itoa(claims.Id)+"_access", newAccessToken)
+	err = utils.AddToRedis(claims.Id.String()+"_access", newAccessToken)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save new access token"})
 		return

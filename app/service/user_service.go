@@ -7,6 +7,7 @@ import (
 	"awesomeProject/app/repository"
 	"awesomeProject/app/utils"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
@@ -26,20 +27,15 @@ type UserServiceImpl struct {
 }
 
 func (u UserServiceImpl) GetMe(c *gin.Context) {
-	userIdAny := c.MustGet("Id")
+	userIdAny := c.MustGet("Id").(string)
 
-	var intUserId int
-	switch v := userIdAny.(type) {
-	case float64:
-		intUserId = int(v)
-	case int:
-		intUserId = v
-	default:
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Unsupported userId type"})
+	userId, err := uuid.Parse(userIdAny)
+	if err != nil {
+		log.Println("Failed to parse user ID:", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
 		return
 	}
-
-	user, err := u.userRepository.FindUserById(intUserId)
+	user, err := u.userRepository.FindUserById(userId)
 	if err != nil {
 		log.Println("Happened error when get data from database. Error:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user"})
@@ -55,7 +51,7 @@ func (u UserServiceImpl) UpdateUserData(c *gin.Context) {
 	defer pkg.PanicHandler(c)
 
 	log.Info("start to execute program update user data by id")
-	userID, _ := strconv.Atoi(c.Param("userID"))
+	userID := c.Param("userID")
 
 	var request dao.User
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -63,7 +59,13 @@ func (u UserServiceImpl) UpdateUserData(c *gin.Context) {
 		pkg.PanicException(constant.InvalidRequest)
 	}
 
-	data, err := u.userRepository.FindUserById(userID)
+	parsedId, err := uuid.Parse(userID)
+	if err != nil {
+		log.Error("Happened error when parse user id. Error", err)
+		pkg.PanicException(constant.InvalidRequest)
+	}
+
+	data, err := u.userRepository.FindUserById(parsedId)
 	if err != nil {
 		log.Error("Happened error when get data from database. Error", err)
 		pkg.PanicException(constant.DataNotFound)
@@ -86,9 +88,13 @@ func (u UserServiceImpl) GetUserById(c *gin.Context) {
 	defer pkg.PanicHandler(c)
 
 	log.Info("start to execute program get user by id")
-	userID, _ := strconv.Atoi(c.Param("userID"))
-
-	data, err := u.userRepository.FindUserById(userID)
+	userID := c.Param("userID")
+	parsedId, err := uuid.Parse(userID)
+	if err != nil {
+		log.Error("Happened error when parse user id. Error", err)
+		pkg.PanicException(constant.InvalidRequest)
+	}
+	data, err := u.userRepository.FindUserById(parsedId)
 	if err != nil {
 		log.Error("Happened error when get data from database. Error", err)
 		pkg.PanicException(constant.DataNotFound)
@@ -156,10 +162,14 @@ func (u UserServiceImpl) DeleteUser(c *gin.Context) {
 	defer pkg.PanicHandler(c)
 
 	log.Info("start to execute delete data user by id")
-	userID, _ := strconv.Atoi(c.Param("userID"))
-
-	err := u.userRepository.DeleteUserById(userID)
+	userID := c.Param("userID")
+	parsedId, err := uuid.Parse(userID)
 	if err != nil {
+		log.Error("Happened error when parse user id. Error", err)
+		pkg.PanicException(constant.InvalidRequest)
+	}
+	errRepo := u.userRepository.DeleteUserById(parsedId)
+	if errRepo != nil {
 		log.Error("Happened Error when try delete data user from DB. Error:", err)
 		pkg.PanicException(constant.UnknownError)
 	}
